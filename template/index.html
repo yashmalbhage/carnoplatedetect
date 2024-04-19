@@ -1,0 +1,116 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Plate Detection</title>
+</head>
+
+<body>
+    <h1>Live Number Plate Detection</h1>
+    <img id="video_feed" src="{{ url_for('video_feed') }}" alt="Live Video Feed">
+    <div id="plate_info">
+        <p id="detected_plate_info"></p>
+        <p id="vehicle_number_info"></p>
+    </div>
+
+    <script>
+        // Function to update the plate info
+        function updatePlateInfo() {
+            fetch('/plate_info')
+                .then(response => response.json())
+                .then(data => {
+                    // Update detected plate info
+                    document.getElementById("detected_plate_info").innerText = "Detected Plate: " + data.detected_plate;
+
+                    // Update vehicle number info
+                    document.getElementById("vehicle_number_info").innerText = "Vehicle Number: " + data.vehicle_number;
+                });
+        }
+
+        // Call updatePlateInfo function every 5 seconds
+        setInterval(updatePlateInfo, 5000);
+    </script>
+</body>
+
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Plate Detection</title>
+    <style>
+        body {
+            background-color: #292c35;
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1 {
+            text-align: center;
+            padding: 20px;
+            background-color: #007bff;
+            margin: 0;
+        }
+        
+        #video_feed {
+            display: block;
+            margin: 0 auto;
+            width: 80%;
+            max-width: 800px;
+            height: auto;
+            border: 2px solid #007bff;
+        }
+        
+        #plate_info {
+            background-color: #000000;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        #detected_plate_info,
+        #vehicle_number_info {
+            margin: 10px 0;
+        }
+        
+        p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Live Number Plate Detection</h1>
+    <img id="video_feed" src="{{ url_for('video_feed') }}" alt="Live Video Feed">
+    <div id="plate_info">
+        <p id="detected_plate_info"></p>
+        <p id="vehicle_number_info"></p>
+    </div>
+
+    <script>
+        // Function to update the plate info
+        function updatePlateInfo() {
+            fetch('/plate_info')
+                .then(response => response.json())
+                .then(data => {
+                    // Update detected plate info
+                    document.getElementById("detected_plate_info").innerText = "Detected Plate: " + data.detected_plate;
+
+                    // Update vehicle number info
+                    document.getElementById("vehicle_number_info").innerText = "Vehicle Number: " + data.vehicle_number;
+                });
+        }
+
+        // Call updatePlateInfo function every 5 seconds
+        setInterval(updatePlateInfo, 5000);
+    </script>
+</body>
+
+</html>
