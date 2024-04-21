@@ -1,71 +1,63 @@
-import io
-import cv2
-import json
-import requests
 from flask import Flask, render_template, Response, jsonify
+import cv2
+import pytesseract
 
 app = Flask(__name__, template_folder='template')
-plate_number = ""
 
-def detect_plates():
-    harcascade = "model/haarcascade_russian_plate_number.xml"
-    cap = cv2.VideoCapture(0)
-    cap.set(3, 320) # width
-    cap.set(4, 240) # height
-    min_area = 500
+# Path to the trained cascade classifier
+harcascade = "model/haarcascade_russian_plate_number.xml"
 
+# Initialize video capture
+cap = cv2.VideoCapture(0)
+
+# Set the width and height of the video capture
+cap.set(3, 320)  # width
+cap.set(4, 2400)  # height
+
+min_area = 500
+count = 0
+
+# Global variable to store the detected plate information
+detected_plate = "Waiting for detection..."
+vehicle_number = "Waiting for detection..."  # Added for displaying the vehicle number
+def detect_plate(skip_frames=10):  # Process every 10th frame
+    global detected_plate, vehicle_number
+    frame_count = 0
     while True:
         success, img = cap.read()
+        if not success:
+            break
+        
+        frame_count += 1
+        if frame_count % skip_frames != 0:
+            continue
 
         plate_cascade = cv2.CascadeClassifier(harcascade)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         plates = plate_cascade.detectMultiScale(img_gray, 1.1, 4)
 
-        
-    for (x, y, w, h) in plates:
-        area = w * h
+        for (x, y, w, h) in plates:
+            area = w * h
 
-        if area > min_area:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(img, "Number Plate", (x, y - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 0, 255), 2)
+            if area > min_area:
+                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(img, "Number Plate", (x, y - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 0, 255), 2)
 
-            img_roi = img[y: y + h, x:x + w]
+                img_roi = img[y: y + h, x:x + w]
+                
+                # Perform OCR to extract vehicle number
+                vehicle_number = pytesseract.image_to_string(img_roi, config='--psm 6')
 
-            # Send image to OCR API if plate is detected
-            ocr_result = perform_ocr(img_roi)
+                # Update detected plate information
+                detected_plate = "ABC123"  # Replace this with your actual plate detection logic
 
-            # Check if 'plate_number' key exists in the OCR result
-            if 'plate_number' in ocr_result:
-                global plate_number
-                plate_number = ocr_result['plate_number']
-            else:
-                plate_number = "Plate number not detected"
-
-        ret, jpeg = cv2.imencode('.tiff', img)
+        # Encode the frame to JPEG
+        ret, jpeg = cv2.imencode('.jpg', img)
         frame = jpeg.tobytes()
-
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-def perform_ocr(img_roi):
-    headers = {
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOTVjYzIzZWQtNTgyMS00MDBjLTg4YjQtOGY1YzNlYWQzMWI4IiwidHlwZSI6ImFwaV90b2tlbiJ9.61kGebuxg0wwh0X9amoddfT5DOiSbowTgv7FKCzHDuM",
-        "Accept": "application/json"
-    }
-    url = "https://api.edenai.run/v2/ocr/ocr_async"
-    data = {"providers": "amazon"}
-    
-    # Convert the NumPy array to bytes
-    _, img_encoded = cv2.imencode('.tiff', img_roi)
-    img_bytes = img_encoded.tobytes()
-
-    files = {'file': ('plate.jpg', img_bytes, 'image/tiff')}
-    
-    response = requests.post(url, data=data, files=files, headers=headers)
-    result = json.loads(response.text)
-    
-    return result
 
 @app.route('/')
 def index():
@@ -73,12 +65,12 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(detect_plates(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(detect_plate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/ocr_result')
-def ocr_result():
-    global plate_number
-    return jsonify({'plate_number': plate_number})
+@app.route('/plate_info')
+def plate_info():
+    return jsonify({'detected_plate': detected_plate, 'vehicle_number': vehicle_number})
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     app.run(debug=True)
